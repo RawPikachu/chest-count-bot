@@ -10,6 +10,8 @@ from db import db_adapter as db
 from corkus import Corkus
 from tabulate import tabulate
 import requests
+import json
+from pprint import pprint
 
 
 class Wynncraft(commands.Cog):
@@ -25,7 +27,7 @@ class Wynncraft(commands.Cog):
     @commands.command(name='listservers')
     async def _listservers(self, ctx):
         db_server_list = db.get_server_list_all()
-        table = [[db_server.name, db_server.total_players, db_server.uptime, db_server.min30_chest_count] for db_server in db_server_list]
+        table = [[db_server["name"], db_server["total_players"], db_server["uptime"], db_server["min30_chest_count"]] for key, db_server in db_server_list.items()]
         table.insert(0, ["Server", "Player Count", "Uptime (min)", "Chest Count (30 mins)"])
         tabulated_table = tabulate(table)
         await ctx.send(f"```prolog\n{tabulated_table}\n```")
@@ -36,15 +38,19 @@ class Wynncraft(commands.Cog):
             
             response = requests.get("https://athena.wynntils.com/cache/get/serverList")
 
-            serverlist = response.text["servers"]
+            serverlist = json.loads(response.text)["servers"]
 
             db_server_names = db_server_list.keys()
 
-            for server in serverlist:
-                if not (server in db_server_names):
-                    db.update_server_list(server, len(serverlist[server]["players"]), serverlist[server]["firstSeen"] / 1000)
-            for db_server in db_server_list:
-                if not (db_server in serverlist):
+            for key, value in serverlist.items():
+                server = value
+                server["name"] = key
+                if not (key in db_server_names):
+                    db.update_server_list(server["name"], len(serverlist[server["name"]]["players"]), serverlist[server["name"]]["firstSeen"] / 1000)
+            for key, value in db_server_list.items():
+                db_server = value
+                db_server["name"] = key
+                if not (db_server["name"] in serverlist):
                     db.delete_server_list(db_server["name"])
                 db_server["uptime"] = int((int(time.time()) - db_server["timestamp"])/60)
                 for server in serverlist:
@@ -59,7 +65,7 @@ class Wynncraft(commands.Cog):
             while True:
                 db_server_list = db.get_server_list_all()
 
-                db_server_list_5_plus = [db_server["name"] for db_server in db_server_list if int(db_server["uptime"]) >= 300]
+                db_server_list_5_plus = [key for key, value in db_server_list.items() if int(value["uptime"]) >= 300]
                 
                 onlineplayers = await corkus.network.online_players()
                 serverlist = onlineplayers.servers
