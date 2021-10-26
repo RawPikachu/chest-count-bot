@@ -38,7 +38,7 @@ class Wynncraft(commands.Cog):
             
             response = requests.get("https://athena.wynntils.com/cache/get/serverList")
 
-            serverlist = dict(response.text)["servers"]
+            serverlist = response.json()["servers"]
 
             db_server_names = db_server_list.keys()
 
