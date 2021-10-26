@@ -38,7 +38,7 @@ class Wynncraft(commands.Cog):
             
             response = requests.get("https://athena.wynntils.com/cache/get/serverList")
 
-            serverlist = json.loads(response.text)["servers"]
+            serverlist = dict(response.text)["servers"]
 
             db_server_names = db_server_list.keys()
 
@@ -65,7 +65,7 @@ class Wynncraft(commands.Cog):
             while True:
                 db_server_list = db.get_server_list_all()
 
-                db_server_list_5_plus = [key for key, value in db_server_list.items() if int(value["uptime"]) >= 300]
+                db_server_list_5_plus = [key for key, value in db_server_list.items() if value["uptime"] >= 300]
                 
                 onlineplayers = await corkus.network.online_players()
                 serverlist = onlineplayers.servers
