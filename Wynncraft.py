@@ -50,11 +50,11 @@ class Wynncraft(commands.Cog):
                 db_server["name"] = key
                 if not (db_server["name"] in serverlist):
                     db.delete_server_list(db_server["name"])
-                db_server["uptime"] = int((time.time() - db_server["timestamp"])/60)
+                uptime = int((time.time() - db_server["timestamp"])/60)
                 for server in serverlist:
                     if server == db_server["name"]:
                         db_server["total_players"] = len(serverlist[server]["players"])
-                        db.update_server_list(server, db_server["total_players"], serverlist[server]["firstSeen"] / 1000, uptime=db_server["uptime"], min30_chest_count=db_server["min30_chest_count"], chest_count=db_server["chest_count"], last_chest_count=db_server["last_chest_count"])
+                        db.update_server_list(server, db_server["total_players"], serverlist[server]["firstSeen"] / 1000, uptime=uptime, min30_chest_count=db_server["min30_chest_count"], chest_count=db_server["chest_count"], last_chest_count=db_server["last_chest_count"])
 
             await asyncio.sleep(30)
     
