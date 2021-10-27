@@ -10,8 +10,6 @@ from db import db_adapter as db
 from corkus import Corkus
 from tabulate import tabulate
 import requests
-import json
-from pprint import pprint
 
 
 class Wynncraft(commands.Cog):
@@ -46,13 +44,13 @@ class Wynncraft(commands.Cog):
                 server = value
                 server["name"] = key
                 if not (key in db_server_names):
-                    db.update_server_list(server["name"], len(serverlist[server["name"]]["players"]), serverlist[server["name"]]["firstSeen"] / 1000)
+                    db.update_server_list(server["name"], len(serverlist[server["name"]]["players"]), serverlist[server["name"]]["firstSeen"] / 1000, uptime=int((time.time() - (serverlist[server["name"]]["firstSeen"] / 1000)/60)))
             for key, value in db_server_list.items():
                 db_server = value
                 db_server["name"] = key
                 if not (db_server["name"] in serverlist):
                     db.delete_server_list(db_server["name"])
-                db_server["uptime"] = int((int(time.time()) - db_server["timestamp"])/60)
+                db_server["uptime"] = int((time.time() - db_server["timestamp"])/60)
                 for server in serverlist:
                     if server == db_server["name"]:
                         db_server["total_players"] = len(serverlist[server]["players"])
@@ -91,9 +89,11 @@ class Wynncraft(commands.Cog):
                         del players_chests_found[key]
 
                     keys_to_check = [key for key in db_server["chest_count"] if not (key in players_chests_found)]
+                    last_players_chests_found = players_chests_found
             
                     for key in keys_to_check:
-                        players_chests_found[key] = db_server["chest_count"][key]
+                        player = await corkus.player.get(key)
+                        players_chests_found[key] = player.statistics.chests_found
             
                     c_db_server_chest_count = Counter(db_server["chest_count"])
                     c_players_chests_found = Counter(players_chests_found)
@@ -101,7 +101,7 @@ class Wynncraft(commands.Cog):
 
                     db_server["min30_chest_count"] = server_total_chests_found
                     db_server["last_chest_count"] = db_server["chest_count"]
-                    db_server["chest_count"] = players_chests_found
+                    db_server["chest_count"] = last_players_chests_found
 
                     db.update_server_list(db_server["name"], db_server["total_players"], db_server["timestamp"], uptime=db_server["uptime"], min30_chest_count=db_server["min30_chest_count"], chest_count=db_server["chest_count"], last_chest_count=db_server["last_chest_count"])
 
